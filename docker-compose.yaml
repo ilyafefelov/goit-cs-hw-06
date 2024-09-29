@@ -1,0 +1,48 @@
+# docker-compose.yaml
+
+version: '3.8'
+
+services:
+  webapp:
+    build: .
+    command: python main.py
+    ports:
+      - "3000:3000" # Exposes webapp on host's port 3000
+    depends_on:
+      - socket_server
+      - mongodb
+    environment:
+      - PROTOCOL=TCP
+      - SOCKET_SERVER_HOST=socket_server
+      - SOCKET_SERVER_PORT=5000
+    networks:
+      - app-network
+
+  socket_server:
+    build: .
+    command: python -u socket_server.py # Use unbuffered output for real-time logs
+    expose:
+      - "5000" # Exposes port 5000 to other services in the network
+    depends_on:
+      - mongodb
+    environment:
+      - PROTOCOL=TCP
+    networks:
+      - app-network
+
+  mongodb:
+    image: mongo:4.4.6
+    ports:
+      - "27017:27017" # Optional: Only if you need to access MongoDB from the host
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - app-network
+
+volumes:
+  mongo-data:
+
+
+networks:
+  app-network:
+    driver: bridge
